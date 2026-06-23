@@ -1,0 +1,303 @@
+pip install streamlit sympy
+streamlit run functions_quiz.py
+"""
+Cambridge AS & A Level Mathematics 9709
+Pure Mathematics 1 – Section 1.2: Functions
+Interactive Quiz with Automatic Marking
+
+Run:
+    pip install streamlit sympy
+    streamlit run functions_quiz.py
+"""
+
+import streamlit as st
+from sympy import symbols, simplify
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    implicit_multiplication_application,
+)
+
+# ── Sympy helpers ─────────────────────────────────────────────────────────────
+x = symbols("x")
+_TR = standard_transformations + (implicit_multiplication_application,)
+
+
+def _to_expr(s: str):
+    try:
+        return parse_expr(s.strip().replace("^", "**"), transformations=_TR)
+    except Exception:
+        return None
+
+
+def algebraic_match(student: str, correct: str) -> bool:
+    a, b = _to_expr(student), _to_expr(correct)
+    if a is None or b is None:
+        return False
+    return simplify(a - b) == 0
+
+
+def numeric_match(student: str, correct: float) -> bool:
+    try:
+        return abs(float(student.strip()) - correct) < 1e-9
+    except Exception:
+        return False
+
+
+# ── Question bank ─────────────────────────────────────────────────────────────
+QUESTIONS = [
+    {
+        "qid": 1,
+        "topic": "Function Evaluation",
+        "latex": r"Given $f(x) = 3x - 5$, find $f(4)$.",
+        "type": "numeric",
+        "answer": 7.0,
+        "hint": r"Substitute $x = 4$ directly into $f(x) = 3x - 5$.",
+        "solution": r"$f(4) = 3(4) - 5 = 12 - 5 = \mathbf{7}$",
+        "marks": 1,
+    },
+    {
+        "qid": 2,
+        "topic": "Function Evaluation",
+        "latex": r"Given $g(x) = x^2 - 3x + 1$, find $g(-2)$.",
+        "type": "numeric",
+        "answer": 11.0,
+        "hint": r"Substitute $x = -2$ carefully: $(-2)^2 = 4$ and $-3 \times (-2) = +6$.",
+        "solution": r"$g(-2) = (-2)^2 - 3(-2) + 1 = 4 + 6 + 1 = \mathbf{11}$",
+        "marks": 1,
+    },
+    {
+        "qid": 3,
+        "topic": "Composite Functions",
+        "latex": r"Given $f(x) = 2x + 1$ and $g(x) = x^2 - 3$, find $fg(2)$.",
+        "type": "numeric",
+        "answer": 3.0,
+        "hint": r"$fg(2)$ means $f\!\left(g(2)\right)$. Start by finding $g(2)$ first.",
+        "solution": r"$g(2) = 4 - 3 = 1$, then $f(1) = 2(1) + 1 = \mathbf{3}$",
+        "marks": 2,
+    },
+    {
+        "qid": 4,
+        "topic": "Composite Functions",
+        "latex": r"Given $f(x) = 2x + 1$ and $g(x) = x^2 - 3$, express $gf(x)$ in simplified form.",
+        "type": "algebraic",
+        "answer": "4*x**2 + 4*x - 2",
+        "hint": r"$gf(x) = g(2x + 1)$. Substitute $(2x+1)$ in place of $x$ in $g(x) = x^2 - 3$.",
+        "solution": r"$gf(x) = (2x+1)^2 - 3 = 4x^2 + 4x + 1 - 3 = \mathbf{4x^2 + 4x - 2}$",
+        "marks": 2,
+    },
+    {
+        "qid": 5,
+        "topic": "Inverse Functions",
+        "latex": r"Find $f^{-1}(x)$ where $f(x) = 5x - 2$.",
+        "type": "algebraic",
+        "answer": "(x + 2)/5",
+        "hint": r"Let $y = 5x - 2$, make $x$ the subject, then replace $y$ with $x$.",
+        "solution": r"$y = 5x - 2 \Rightarrow x = \dfrac{y+2}{5}$, so $f^{-1}(x) = \mathbf{\dfrac{x+2}{5}}$",
+        "marks": 2,
+    },
+    {
+        "qid": 6,
+        "topic": "Inverse Functions",
+        "latex": r"Given $f(x) = \dfrac{3}{x - 1},\; x \neq 1$, find $f^{-1}(x)$.",
+        "type": "algebraic",
+        "answer": "3/x + 1",
+        "hint": r"Cross-multiply: $y(x-1) = 3$, then make $x$ the subject.",
+        "solution": r"$y(x-1) = 3 \Rightarrow x = \dfrac{3}{y} + 1$, so $f^{-1}(x) = \mathbf{\dfrac{3}{x} + 1}$",
+        "marks": 3,
+    },
+    {
+        "qid": 7,
+        "topic": "Composite & Inverse",
+        "latex": r"Given $f(x) = 2x - 4$, evaluate $f^{-1}f(3)$ without finding $f^{-1}(x)$ explicitly.",
+        "type": "numeric",
+        "answer": 3.0,
+        "hint": r"Think about what $f^{-1}f(x)$ always equals for any function $f$.",
+        "solution": r"$f^{-1}f(x) = x$ for all $x$ in the domain, so $f^{-1}f(3) = \mathbf{3}$.",
+        "marks": 1,
+    },
+    {
+        "qid": 8,
+        "topic": "Domain & Range",
+        "latex": r"The function $f(x) = \sqrt{x - 3}$ is defined for $x \geq a$. State the value of $a$.",
+        "type": "numeric",
+        "answer": 3.0,
+        "hint": r"The expression under the square root must be non-negative.",
+        "solution": r"$x - 3 \geq 0 \Rightarrow x \geq 3$, so $a = \mathbf{3}$.",
+        "marks": 1,
+    },
+    {
+        "qid": 9,
+        "topic": "Domain & Range",
+        "latex": r"Given $f(x) = (x - 2)^2 + 5$ for $x \geq 2$, find the minimum value of $f(x)$.",
+        "type": "numeric",
+        "answer": 5.0,
+        "hint": r"The minimum occurs at $x = 2$ since $x \geq 2$.",
+        "solution": r"At $x = 2$: $f(2) = 0 + 5 = \mathbf{5}$. So the range is $f(x) \geq 5$.",
+        "marks": 1,
+    },
+    {
+        "qid": 10,
+        "topic": "Inverse Functions",
+        "latex": r"Given $f(x) = (x-2)^2 + 5$ for $x \geq 2$, find $f^{-1}(x)$.",
+        "type": "algebraic",
+        "answer": "sqrt(x - 5) + 2",
+        "hint": r"Let $y = (x-2)^2 + 5$, so $(x-2)^2 = y - 5$. Take the positive square root (why?).",
+        "solution": r"$x - 2 = \sqrt{y - 5}$ (positive root since $x \geq 2$), so $f^{-1}(x) = \mathbf{\sqrt{x-5} + 2}$",
+        "marks": 3,
+    },
+]
+
+TOTAL_MARKS = sum(q["marks"] for q in QUESTIONS)
+
+# ── Session state ─────────────────────────────────────────────────────────────
+for key in ("results", "hints", "solutions"):
+    if key not in st.session_state:
+        st.session_state[key] = {}
+
+# ── Page config ───────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Functions Quiz | Cambridge AS Level",
+    page_icon="📐",
+    layout="centered",
+)
+
+# ── Header ────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <div style="background:#1B2A4A;padding:1.5rem 2rem;border-radius:10px;margin-bottom:1rem">
+      <h2 style="color:#F4C430;margin:0">📐 Functions – Interactive Quiz</h2>
+      <p style="color:#9EC8D4;margin:0.3rem 0 0">
+        Cambridge AS & A Level Mathematics 9709 &nbsp;·&nbsp; Pure Mathematics 1 &nbsp;·&nbsp; Section 1.2
+      </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ── Instructions ──────────────────────────────────────────────────────────────
+with st.expander("📋 Instructions", expanded=False):
+    st.markdown(
+        """
+        - Type your answer in the input box below each question.
+        - For **numerical** answers, type a number, e.g. `7` or `-4`.
+        - For **algebraic** answers, type an expression using standard notation:
+          - Use `^` or `**` for powers: `x^2` or `x**2`
+          - Use `/` for fractions: `(x+2)/5`
+          - Use `sqrt(...)` for square roots: `sqrt(x-5) + 2`
+        - Click **Check ✔** to mark your answer.
+        - Click **Hint 💡** if you're stuck (this won't affect your score).
+        - Click **Show Solution 📖** after attempting a question.
+        """
+    )
+
+# ── Live score bar ────────────────────────────────────────────────────────────
+score = sum(v["marks"] for v in st.session_state.results.values() if v["correct"])
+attempted = len(st.session_state.results)
+pct = score / TOTAL_MARKS if TOTAL_MARKS > 0 else 0
+
+c1, c2, c3 = st.columns(3)
+c1.metric("Score", f"{score} / {TOTAL_MARKS}")
+c2.metric("Attempted", f"{attempted} / {len(QUESTIONS)}")
+c3.metric("Percentage", f"{int(pct * 100)}%")
+st.progress(pct)
+st.markdown("---")
+
+# ── Render questions ──────────────────────────────────────────────────────────
+for q in QUESTIONS:
+    qid = q["qid"]
+    result = st.session_state.results.get(qid)
+
+    with st.container():
+        # Question header
+        h1, h2 = st.columns([5, 1])
+        with h1:
+            st.markdown(f"**Q{qid}** &nbsp; _{q['topic']}_")
+        with h2:
+            badge = f"[{q['marks']} mk]"
+            st.markdown(
+                f"<div style='text-align:right;color:#888'><b>{badge}</b></div>",
+                unsafe_allow_html=True,
+            )
+
+        # Question text (LaTeX rendered via st.markdown)
+        st.markdown(q["latex"])
+
+        # Answer input
+        already_correct = result is not None and result["correct"]
+        user_ans = st.text_input(
+            "Answer:",
+            key=f"input_{qid}",
+            placeholder="Type answer here…",
+            disabled=already_correct,
+        )
+
+        # Buttons
+        b1, b2, b3 = st.columns([1, 1, 2])
+        with b1:
+            check_clicked = st.button("Check ✔", key=f"check_{qid}", disabled=already_correct)
+        with b2:
+            hint_clicked = st.button("Hint 💡", key=f"hint_{qid}")
+        with b3:
+            sol_clicked = (
+                st.button("Show Solution 📖", key=f"sol_{qid}")
+                if result is not None
+                else False
+            )
+
+        # ── Check answer ──────────────────────────────────────────────────────
+        if check_clicked and user_ans.strip():
+            if q["type"] == "numeric":
+                correct = numeric_match(user_ans, q["answer"])
+            else:
+                correct = algebraic_match(user_ans, q["answer"])
+            st.session_state.results[qid] = {
+                "answer": user_ans,
+                "correct": correct,
+                "marks": q["marks"] if correct else 0,
+            }
+            st.rerun()
+
+        # ── Feedback ──────────────────────────────────────────────────────────
+        if result is not None:
+            if result["correct"]:
+                st.success(
+                    f"✅ Correct! +{q['marks']} mark{'s' if q['marks'] > 1 else ''}"
+                )
+            else:
+                st.error("❌ Not quite — check your working, use a hint, or review the solution.")
+
+        # ── Hint ──────────────────────────────────────────────────────────────
+        if hint_clicked:
+            st.session_state.hints[qid] = True
+        if st.session_state.hints.get(qid):
+            st.info(f"💡 **Hint:** {q['hint']}")
+
+        # ── Solution ──────────────────────────────────────────────────────────
+        if sol_clicked:
+            st.session_state.solutions[qid] = True
+        if st.session_state.solutions.get(qid):
+            st.markdown(f"📖 **Solution:** &nbsp; {q['solution']}")
+
+        st.markdown("---")
+
+# ── Final score panel ─────────────────────────────────────────────────────────
+if attempted == len(QUESTIONS):
+    pct_final = int(100 * score / TOTAL_MARKS)
+    st.markdown("### 🎯 Quiz Complete!")
+
+    if pct_final == 100:
+        st.balloons()
+        st.success(f"🎉 Full marks! {score}/{TOTAL_MARKS} — Outstanding performance.")
+    elif pct_final >= 70:
+        st.success(f"👍 {score}/{TOTAL_MARKS} ({pct_final}%) — Strong result. Review any mistakes.")
+    elif pct_final >= 50:
+        st.warning(f"📚 {score}/{TOTAL_MARKS} ({pct_final}%) — Good effort. Revisit composite and inverse functions.")
+    else:
+        st.error(f"💪 {score}/{TOTAL_MARKS} ({pct_final}%) — Keep practising! Review Section 1.2 notes.")
+
+    st.markdown("---")
+    if st.button("🔄 Reset and Try Again"):
+        for key in ("results", "hints", "solutions"):
+            st.session_state[key] = {}
+        st.rerun()
